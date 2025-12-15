@@ -13,7 +13,7 @@ exports.createThumbnail = async (request, reply) => {
 
     for await (const part of parts) {
       if (part.file) {
-        const filename = `${Date.now()}-${part.filename}`;
+        filename = `${Date.now()}-${part.filename}`;
         const saveTo = path.join(
           __dirname,
           "..",
