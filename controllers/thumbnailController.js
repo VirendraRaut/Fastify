@@ -13,7 +13,7 @@ exports.createThumbnail = async (request, reply) => {
 
     for await (const part of parts) {
       if (part.file) {
-        filename = `${Date.now()}-${part.filename}`;
+        const filename = `${Date.now()}-${part.filename}`;
         const saveTo = path.join(
           __dirname,
           "..",
@@ -36,8 +36,101 @@ exports.createThumbnail = async (request, reply) => {
     });
 
     await thumbnail.save();
-    return reply.code(201).send(thumbnail);
-  } catch (error) {
-    return reply.send(error);
+    reply.code(201).send(thumbnail);
+  } catch (err) {
+    reply.send(err);
+  }
+};
+
+exports.getThumbnails = async (request, reply) => {
+  try {
+    const thumbnails = await Thumbnail.find({ user: request.user.id });
+    reply.send(thumbnails);
+  } catch (err) {
+    reply.send(err);
+  }
+};
+
+exports.getThumbnail = async (request, reply) => {
+  try {
+    //validate it first
+    const thumbnail = await Thumbnail.findOne({
+      _id: request.params.id,
+      user: request.user.id,
+    });
+    if (!thumbnail) {
+      return reply.notFound("Thumbnail not found");
+    }
+    reply.send(thumbnail);
+  } catch (err) {
+    reply.send(err);
+  }
+};
+
+exports.updateThumbnail = async (request, reply) => {
+  try {
+    const updatedData = request.body;
+    const thumbnail = await Thumbnail.findByIdAndUpdate(
+      { _id: request.params.id, user: request.user.id },
+      updatedData,
+      { new: true }
+    );
+    if (!thumbnail) {
+      return reply.notFound("Thumbnail not found");
+    }
+    reply.send(thumbnail);
+  } catch (err) {
+    reply.send(err);
+  }
+};
+
+exports.deleteThumbnail = async (request, reply) => {
+  try {
+    const thumbnail = await Thumbnail.findByIdAndDelete({
+      _id: request.params.id,
+      user: request.user.id,
+    });
+    if (!thumbnail) {
+      return reply.notFound("Thumbnail not found");
+    }
+
+    const filepath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      "thumbnails",
+      path.basename(thumbnail.image)
+    );
+    fs.unlink(filepath, (err) => {
+      if (err) fastify.log.error(err);
+    });
+
+    reply.send({ message: "Thumbnail deleted" });
+  } catch (err) {
+    reply.send(err);
+  }
+};
+
+exports.deleteAllThumbnails = async (request, reply) => {
+  try {
+    const thumbnails = await Thumbnail.find({ user: request.user.id });
+
+    await Thumbnail.deleteMany({ user: request.user.id });
+
+    for (const thumbnail of thumbnails) {
+      const filepath = path.join(
+        __dirname,
+        "..",
+        "uploads",
+        "thumbnails",
+        path.basename(thumbnail.image)
+      );
+      fs.unlink(filepath, (err) => {
+        if (err) fastify.log.error(err);
+      });
+    }
+    reply.send({ message: "All thumbnails deleted" });
+  } catch (err) {
+    reply.send(err);
   }
 };

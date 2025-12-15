@@ -8,22 +8,22 @@ fastify.register(require("@fastify/cors"));
 fastify.register(require("@fastify/sensible"));
 fastify.register(require("@fastify/multipart"));
 fastify.register(
-    require("@fastify/static", {
-        root: path.join(__dirname, "uploads"),
-        prefix: "/uploads/", // optional: default '/'
-    })
+  require("@fastify/static", {
+    root: path.join(__dirname, "uploads"),
+    prefix: "/uploads/", // optional: default '/'
+  })
 );
 fastify.register(require("@fastify/env"), {
-    dotenv: true,
-    schema: {
-        type: "object",
-        required: ["PORT", "MONGODB_URI", "JWT_TOKEN"],
-        properties: {
-            PORT: { type: "string", default: 3000 },
-            MONGODB_URI: { type: "string" },
-            JWT_TOKEN: { type: "string" },
-        },
+  dotenv: true,
+  schema: {
+    type: "object",
+    required: ["PORT", "MONGODB_URI", "JWT_TOKEN"],
+    properties: {
+      PORT: { type: "string", default: 3000 },
+      MONGODB_URI: { type: "string" },
+      JWT_TOKEN: { type: "string" },
     },
+  },
 });
 
 //register custom plugins
@@ -36,69 +36,52 @@ fastify.register(require("./routes/thumbnail"), { prefix: "/api/thumbnail" });
 
 // Declare a route
 fastify.get("/", function (request, reply) {
-    reply.send({ hello: "world" });
+  reply.send({ hello: "world" });
 });
 
 //test database connection
-// fastify.get("/Fastify", async (request, reply) => {
-//     try {
-//         const mongoose = fastify.mongoose;
-//         const connectionState = mongoose.connection.readyState;
-
-//         let status = "";
-//         switch (connectionState) {
-//             case 0:
-//                 status = "disconnected";
-//                 break;
-//             case 1:
-//                 status = "connected";
-//                 break;
-//             case 2:
-//                 status = "connecting";
-//                 break;
-//             case 3:
-//                 status = "disconnecting";
-//                 break;
-
-//             default:
-//                 status = "unknown";
-//                 break;
-//         }
-//         reply.send({ database: status });
-//     } catch (err) {
-//         fastify.log.error(err);
-//         reply.status(500).send({ error: "Failed to test database" });
-//         process.exit(1);
-//     }
-// });
-
-fastify.get("/health/db", async (request, reply) => {
+fastify.get("/test-db", async (request, reply) => {
+  try {
     const mongoose = fastify.mongoose;
-    const state = mongoose.connection.readyState;
+    const connectionState = mongoose.connection.readyState;
 
-    const statusMap = {
-        0: "disconnected",
-        1: "connected",
-        2: "connecting",
-        3: "disconnecting",
-    };
+    let status = "";
+    switch (connectionState) {
+      case 0:
+        status = "disconnected";
+        break;
+      case 1:
+        status = "connected";
+        break;
+      case 2:
+        status = "connecting";
+        break;
+      case 3:
+        status = "disconnecting";
+        break;
 
-    reply.send({
-        database: statusMap[state] || "unknown",
-    });
+      default:
+        status = "unknown";
+        break;
+    }
+    reply.send({ database: status });
+  } catch (err) {
+    fastify.log.error(err);
+    reply.status(500).send({ error: "Failed to test database" });
+    process.exit(1);
+  }
 });
 
-
 const start = async () => {
-    try {
-        await fastify.listen({ port: process.env.PORT });
-        fastify.log.info(
-            `Server is running at http://localhost:${process.env.PORT}`
-        );
-    } catch (err) {
-        fastify.log.error(err);
-        process.exit(1);
-    }
+  try {
+    await fastify.listen({ port: process.env.PORT });
+    fastify.log.info(
+      `Server is running at http://localhost:${process.env.PORT}`
+    );
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
 };
 
 start();
