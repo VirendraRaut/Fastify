@@ -36,8 +36,8 @@ exports.createThumbnail = async (request, reply) => {
     });
 
     await thumbnail.save();
-    reply.code(201).send(thumbnail);
+    return reply.code(201).send(thumbnail);
   } catch (error) {
-    return reply.send(err);
+    return reply.send(error);
   }
 };
